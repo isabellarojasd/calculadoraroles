@@ -1,0 +1,212 @@
+@startuml Diagrama_Biblioteca_UAM
+
+' ==================== CLASE PRINCIPAL ====================
+class Biblioteca {
+  - usuarios: List<Usuario>
+  - materiales: List<Material>
+  - prestamos: List<Prestamo>
+  - multas: List<Multa>
+  --
+  + Biblioteca()
+  + registrarUsuario(id: int, nombre: String, correo: String): Usuario
+  + consultarMateriales(): List<Material>
+  + buscarMaterial(codigo: String): Material
+  + crearPrestamo(usuario: Usuario, materiales: List<Material>): Prestamo
+  + procesarPago(multa: Multa, metodoPago: MetodoPago): boolean
+  + generarReporte(): void
+  + verificarMultas(): List<Multa>
+}
+
+' ==================== USUARIOS ====================
+abstract class Usuario {
+  # id: int
+  # nombreCompleto: String
+  # correo: String
+  # historial: List<Prestamo>
+  --
+  + Usuario(id: int, nombre: String, correo: String)
+  + consultarMateriales(): void
+  + solicitarPrestamo(materiales: List<Prestamo>): void
+  + getId(): int
+  + getNombre(): String
+  + getCorreo(): String
+  + getHistorial(): List<Prestamo>
+}
+
+class Estudiante {
+  - cursosInscritos: List<Curso>
+  --
+  + Estudiante(id: int, nombre: String, correo: String)
+  + inscribirCurso(curso: Curso): void
+  + verProgreso(): void
+}
+
+class Docente {
+  - departamento: String
+  - cursosImpartidos: List<Curso>
+  --
+  + Docente(id: int, nombre: String, correo: String, departamento: String)
+  + asignarCurso(curso: Curso): void
+  + getDepartamento(): String
+}
+
+' ==================== MATERIALES ====================
+abstract class Material {
+  # codigo: String
+  # titulo: String
+  # autor: String
+  # anioPublicacion: int
+  # archivos: List<ArchivoDigital>
+  --
+  + Material(codigo: String, titulo: String, autor: String, anio: int)
+  + agregarArchivo(archivo: ArchivoDigital): void
+  + getCodigo(): String
+  + getTitulo(): String
+  + getAutor(): String
+  + getAnio(): int
+  + getArchivos(): List<ArchivoDigital>
+}
+
+class Libro {
+  - genero: String
+  - numeroPaginas: int
+  - editorial: String
+  --
+  + Libro(codigo: String, titulo: String, autor: String, anio: int, genero: String)
+  + getGenero(): String
+  + getNumeroPaginas(): int
+}
+
+class Revista {
+  - numeroEdicion: int
+  - periodicidad: String
+  - issn: String
+  --
+  + Revista(codigo: String, titulo: String, autor: String, anio: int, edicion: int)
+  + getNumeroEdicion(): int
+  + getPeriodicidad(): String
+}
+
+class Video {
+  - duracion: int
+  - formato: String
+  - resolucion: String
+  --
+  + Video(codigo: String, titulo: String, autor: String, anio: int, duracion: int)
+  + getDuracion(): int
+  + getFormato(): String
+}
+
+' ==================== ARCHIVO DIGITAL ====================
+class ArchivoDigital {
+  - nombre: String
+  - formato: String
+  - tamanio: double
+  - url: String
+  --
+  + ArchivoDigital(nombre: String, formato: String, tamanio: double)
+  + getNombre(): String
+  + getFormato(): String
+  + getTamanio(): double
+  + descargar(): void
+}
+
+' ==================== PRESTAMO ====================
+class Prestamo {
+  - id: int
+  - fechaInicio: Date
+  - fechaDevolucion: Date
+  - estado: String
+  - registroAcciones: List<String>
+  - usuario: Usuario
+  - materiales: List<Material>
+  --
+  + Prestamo(usuario: Usuario, materiales: List<Material>, fechaDevolucion: Date)
+  + renovar(): void
+  + devolver(): void
+  + getEstado(): String
+  + calcularDiasRetraso(): int
+  + getFechaInicio(): Date
+  + getFechaDevolucion(): Date
+  + agregarAccion(accion: String): void
+}
+
+' ==================== MULTA ====================
+class Multa {
+  - id: int
+  - monto: double
+  - fechaGeneracion: Date
+  - pagada: boolean
+  - prestamo: Prestamo
+  - descripcion: String
+  --
+  + Multa(prestamo: Prestamo, monto: double)
+  + pagar(metodoPago: MetodoPago): boolean
+  + getMonto(): double
+  + isPagada(): boolean
+  + getDescripcion(): String
+}
+
+' ==================== METODOS DE PAGO ====================
+interface MetodoPago {
+  + validarMonto(monto: double): boolean
+  + procesarPago(monto: double): boolean
+  + confirmarTransaccion(): String
+}
+
+class TarjetaBancaria {
+  - numeroTarjeta: String
+  - titular: String
+  - fechaVencimiento: Date
+  - cvv: String
+  --
+  + TarjetaBancaria(numero: String, titular: String, fecha: Date)
+  + validarMonto(monto: double): boolean
+  + procesarPago(monto: double): boolean
+  + confirmarTransaccion(): String
+  + validarTarjeta(): boolean
+}
+
+class TransferenciaElectronica {
+  - numeroCuenta: String
+  - banco: String
+  - titular: String
+  --
+  + TransferenciaElectronica(cuenta: String, banco: String, titular: String)
+  + validarMonto(monto: double): boolean
+  + procesarPago(monto: double): boolean
+  + confirmarTransaccion(): String
+  + verificarSaldo(): boolean
+}
+
+' ==================== RELACIONES ====================
+
+' Herencia
+Usuario <|-- Estudiante
+Usuario <|-- Docente
+Material <|-- Libro
+Material <|-- Revista
+Material <|-- Video
+
+' Implementación
+MetodoPago <|.. TarjetaBancaria
+MetodoPago <|.. TransferenciaElectronica
+
+' Agregación (Biblioteca contiene pero los objetos pueden existir independientemente)
+Biblioteca o-- "0..*" Usuario : administra >
+Biblioteca o-- "0..*" Material : gestiona >
+Biblioteca o-- "0..*" Prestamo : registra >
+Biblioteca o-- "0..*" Multa : controla >
+
+' Composición (Material contiene archivos que NO pueden existir sin el material)
+Material *-- "1..*" ArchivoDigital : contiene >
+
+' Asociación
+Usuario "1" -- "0..*" Prestamo : solicita >
+Prestamo "1" -- "1..*" Material : incluye >
+Prestamo "1" -- "0..1" Multa : genera >
+
+' Dependencia
+Multa ..> MetodoPago : usa >
+
+@enduml
